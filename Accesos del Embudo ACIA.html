@@ -1,0 +1,486 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Accesos del Embudo ACIA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra superior con el desplegable de embudos; debajo el nombre del embudo con su carpeta de Drive y una tarjeta por herramienta (cabecera, y abajo dos bloques: entrar a la herramienta | copys). Los editores ven un formulario. */
+:root {
+  --bg: #f3f5f9;
+  --surface: #ffffff;
+  --fg: #141a2b;
+  --muted: #5a6479;
+  --line: #dde2ec;
+  --accent: #2f45d8;
+  --accent-fg: #ffffff;
+  --accent-soft: #e8ebfc;
+  --warn-bg: #fff4dc;
+  --warn-fg: #7a5200;
+  --danger: #b3261e;
+  --ok: #17794a;
+  --font-display: "Bricolage Grotesque", "Segoe UI", sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1424; --surface: #171d33; --fg: #e8ebf5; --muted: #98a2bd; --line: #2a3250;
+    --accent: #8d9bff; --accent-fg: #0f1424; --accent-soft: #232b52;
+    --warn-bg: #3a2d10; --warn-fg: #f2c971; --danger: #ff8f86; --ok: #5fd69b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1424; --surface: #171d33; --fg: #e8ebf5; --muted: #98a2bd; --line: #2a3250;
+  --accent: #8d9bff; --accent-fg: #0f1424; --accent-soft: #232b52;
+  --warn-bg: #3a2d10; --warn-fg: #f2c971; --danger: #ff8f86; --ok: #5fd69b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+.bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.bar .title { display: flex; flex-direction: column; gap: 2px; flex: 1 1 100%; }
+.bar h1 { font-family: var(--font-display); font-size: clamp(24px, 4.5vw, 32px); line-height: 1.1; margin: 0; }
+.pick { display: flex; flex-direction: column; gap: 4px; flex: 1 1 280px; max-width: 460px; min-width: 0; }
+.pick label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.bar .btn { min-height: 44px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font: 600 15px/1 var(--font-body); padding: 10px 16px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  text-decoration: none; cursor: pointer; min-height: 42px;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible, .field:focus-visible, .copy:focus-visible, .val:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.small { min-height: 34px; padding: 7px 12px; font-size: 14px; }
+.btn.quiet { background: transparent; }
+.btn.danger { color: var(--danger); }
+.btn.danger:hover { border-color: var(--danger); }
+.btn[disabled] { opacity: .55; cursor: default; }
+.copy {
+  display: inline-flex; align-items: center; justify-content: center; width: 42px; min-height: 42px; flex: none;
+  border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; padding: 0;
+}
+.copy:hover { border-color: var(--accent); color: var(--accent); }
+.copy svg { width: 18px; height: 18px; }
+
+.field {
+  font: 400 15px/1.4 var(--font-body); color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; min-width: 0;
+}
+select.field { min-height: 44px; font-weight: 600; font-size: 16px; cursor: pointer; }
+textarea.field { min-height: 78px; resize: vertical; font-family: var(--font-mono); font-size: 13px; background: var(--bg); }
+.form .field { background: var(--bg); }
+
+.fhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.fhead h2 { font-family: var(--font-display); font-size: clamp(21px, 4vw, 26px); line-height: 1.15; margin: 0; flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; text-wrap: balance; }
+
+.tool { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.tool-top { padding: 18px 20px 14px; display: flex; flex-direction: column; gap: 8px; }
+.tool-top h3 { font-family: var(--font-display); font-size: 20px; line-height: 1.2; margin: 0; overflow-wrap: anywhere; }
+.tool-top p { margin: 0; color: var(--muted); font-size: 15px; }
+.vals { display: flex; flex-wrap: wrap; gap: 6px; }
+.val {
+  display: inline-flex; align-items: baseline; gap: 6px; max-width: 100%; text-align: left;
+  font: 400 13px/1.4 var(--font-mono); color: var(--fg); background: var(--accent-soft);
+  border: 0; border-radius: 6px; padding: 4px 8px; cursor: pointer; overflow-wrap: anywhere;
+}
+.val span { color: var(--muted); font-family: var(--font-body); font-size: 12px; font-weight: 600; flex: none; }
+.val:hover { outline: 1px solid var(--accent); }
+.tool-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.blk { padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.blk + .blk { border-left: 1px solid var(--line); }
+.blk .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.blk .t { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; min-height: 21px; }
+.blk .row { display: flex; gap: 8px; margin-top: auto; }
+.blk .row .btn { flex: 1 1 auto; }
+.pending { display: inline-block; background: var(--warn-bg); color: var(--warn-fg); font-size: 13px; font-weight: 600; padding: 3px 8px; border-radius: 6px; align-self: flex-start; }
+
+.state { background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 28px 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.state b { font-family: var(--font-display); font-size: 19px; }
+.state p { margin: 0; color: var(--muted); max-width: 60ch; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; max-width: calc(100% - 32px); z-index: 20; }
+.toast.err { background: var(--danger); color: #fff; }
+
+.form { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+.form h2 { font-family: var(--font-display); font-size: 22px; margin: 0; }
+.grid2 { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lbl { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; min-width: 0; }
+.lbl small { font-weight: 400; color: var(--muted); font-size: 13px; }
+.tool-form { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.tool-form .th { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.tool-form .th b { font-family: var(--font-display); font-size: 16px; }
+.sp { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.add-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.add-row span { font-size: 14px; color: var(--muted); }
+.save-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+@media (max-width: 640px) {
+  .tool-acts { grid-template-columns: minmax(0, 1fr); }
+  .blk + .blk { border-left: 0; border-top: 1px solid var(--line); }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .pick { max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <div id="app" class="col" aria-live="polite"></div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+  var app = document.getElementById('app');
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  var db = null, canEdit = false;
+  var state = { funnels: [], remote: [], pending: null, gone: {}, selected: null, editing: null, loaded: false, confirmDelete: false, saving: false };
+
+  var COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+
+  var TEMPLATES = {
+    ghl: { label: 'Correos GHL', title: 'Correos en GoHighLevel', what: '', detailsText: '' },
+    agentiza: { label: 'Agentiza', title: 'Agentiza · Difusiones de WhatsApp', what: '', detailsText: '' },
+    sendflow: { label: 'SendFlow', title: 'SendFlow · Grupos de WhatsApp', what: '', detailsText: '' },
+    otro: { label: 'Otra herramienta', title: '', what: '', detailsText: '' }
+  };
+
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === false || v == null) return;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k === 'html') el.innerHTML = v;
+      else if (k.indexOf('on') === 0) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    });
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+    return el;
+  }
+  function say(text, isErr) {
+    toast.textContent = text;
+    toast.className = 'toast' + (isErr ? ' err' : '');
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.hidden = true; }, isErr ? 4500 : 2200);
+  }
+  function safeUrl(u) {
+    try {
+      var x = new URL(String(u || '').trim());
+      return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : null;
+    } catch (e) { return null; }
+  }
+  function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function copyText(text, okMsg) {
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      say(ok ? okMsg : 'No se pudo copiar. Usa el botón para abrirlo.', !ok);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { say(okMsg); }, fallback);
+    } else { fallback(); }
+  }
+  function openBtn(label, url, primary) {
+    return h('a', { class: 'btn' + (primary ? ' primary' : ''), href: url, target: '_blank', rel: 'noopener' }, label + ' ', h('span', { 'aria-hidden': 'true', text: '↗' }));
+  }
+  function copyBtn(url, what) {
+    return h('button', { class: 'copy', type: 'button', html: COPY_ICON, title: 'Copiar enlace', 'aria-label': 'Copiar enlace de ' + what, onclick: function () { copyText(url, 'Enlace copiado'); } });
+  }
+
+  function currentFunnel() {
+    var f = state.funnels.filter(function (x) { return x.id === state.selected; })[0];
+    return f || state.funnels[0] || null;
+  }
+
+  /* ---------- Vista ---------- */
+  function toolCard(t) {
+    var url = safeUrl(t.url), cUrl = safeUrl(t.copyUrl);
+    var top = h('div', { class: 'tool-top' }, h('h3', { text: t.title || 'Herramienta' }), t.what ? h('p', { text: t.what }) : null);
+    var det = (t.details || []).filter(function (d) { return d && d.v; });
+    if (det.length) {
+      var vals = h('div', { class: 'vals' });
+      det.forEach(function (d) {
+        vals.appendChild(h('button', { class: 'val', type: 'button', title: 'Copiar', onclick: function () { copyText(d.v, 'Copiado'); } }, d.k ? h('span', { text: d.k }) : null, document.createTextNode(d.v)));
+      });
+      top.appendChild(vals);
+    }
+    var tool = h('div', { class: 'blk' }, h('div', { class: 'k', text: 'Herramienta' }),
+      h('div', { class: 't', text: url ? host(url) : '' }),
+      url ? h('div', { class: 'row' }, openBtn('Abrir', url, true), copyBtn(url, t.title || 'la herramienta')) : h('span', { class: 'pending', text: 'Falta el enlace' }));
+    var copys = h('div', { class: 'blk' }, h('div', { class: 'k', text: 'Copys' }),
+      h('div', { class: 't', text: t.copyName || (cUrl ? host(cUrl) : '') }),
+      cUrl ? h('div', { class: 'row' }, openBtn('Abrir copys', cUrl, false), copyBtn(cUrl, 'los copys')) : h('span', { class: 'pending', text: 'Falta el enlace de copys' }));
+    return h('article', { class: 'tool' }, top, h('div', { class: 'tool-acts' }, tool, copys));
+  }
+
+  function topBar(cur) {
+    var bar = h('div', { class: 'bar' },
+      h('div', { class: 'title' }, h('div', { class: 'eyebrow', text: 'ACIA · Implementación' }), h('h1', { text: 'Accesos de embudos' })));
+    if (state.funnels.length) {
+      var sel = h('select', { class: 'field', id: 'funnel-select' });
+      state.funnels.forEach(function (f) {
+        var o = h('option', { value: f.id, text: f.name || 'Sin nombre' });
+        if (cur && cur.id === f.id) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', function () { state.selected = sel.value; store('acia-embudo-sel', sel.value); render(); var s = document.getElementById('funnel-select'); if (s) s.focus(); });
+      bar.appendChild(h('div', { class: 'pick' }, h('label', { for: 'funnel-select', text: 'Embudo' }), sel));
+    }
+    var fUrl = cur ? safeUrl(cur.folderUrl) : null;
+    if (fUrl) bar.appendChild(h('a', { class: 'btn primary', href: fUrl, target: '_blank', rel: 'noopener' }, 'Carpeta en Drive ', h('span', { 'aria-hidden': 'true', text: '↗' })));
+    if (canEdit && cur) bar.appendChild(h('button', { class: 'btn quiet', type: 'button', text: 'Editar', onclick: function () { startEdit(cur); } }));
+    if (canEdit && state.funnels.length) bar.appendChild(h('button', { class: 'btn quiet', type: 'button', text: '+ Nuevo', onclick: function () { startEdit(null); } }));
+    return bar;
+  }
+
+  function renderView() {
+    app.replaceChildren();
+    if (!db) {
+      app.appendChild(h('div', { class: 'state' }, h('b', { text: 'No se pudieron cargar los embudos' }), h('p', { text: 'Abre esta página con tu sesión de Academia de IA. Si ya la tienes y sigue igual, pide acceso a quien te compartió el enlace.' })));
+      return;
+    }
+    if (!state.loaded) {
+      app.appendChild(h('div', { class: 'state' }, h('b', { text: 'Cargando embudos…' })));
+      return;
+    }
+    var cur = currentFunnel();
+    if (!cur) {
+      app.appendChild(h('div', { class: 'bar' }, h('div', { class: 'title' }, h('div', { class: 'eyebrow', text: 'ACIA · Implementación' }), h('h1', { text: 'Accesos de embudos' }))));
+      app.appendChild(h('div', { class: 'state' },
+        h('b', { text: 'Aún no hay embudos cargados' }),
+        h('p', { text: canEdit ? 'Crea el primero con su carpeta de Drive, sus herramientas y sus copys.' : 'Pídele a quien administra esta página que cargue el primer embudo.' }),
+        canEdit ? h('button', { class: 'btn primary', type: 'button', text: 'Crear el primer embudo', onclick: function () { startEdit(null); } }) : null));
+      return;
+    }
+    app.appendChild(topBar(cur));
+    var tools = cur.tools || [];
+    if (!tools.length) app.appendChild(h('div', { class: 'state' }, h('b', { text: 'Este embudo no tiene herramientas todavía' }), h('p', { text: canEdit ? 'Usa “Editar” para agregar correos, difusiones o grupos.' : 'Pídele a quien administra esta página que las agregue.' })));
+    tools.forEach(function (t) { app.appendChild(toolCard(t)); });
+  }
+
+  /* ---------- Edición ---------- */
+  function detailsToText(arr) { return (arr || []).map(function (d) { return (d.k || '') + ': ' + (d.v || ''); }).join('\n'); }
+  function textToDetails(txt) {
+    return String(txt || '').split('\n').map(function (line) {
+      var i = line.indexOf(':');
+      if (i < 0) return line.trim() ? { k: '', v: line.trim() } : null;
+      var k = line.slice(0, i).trim(), v = line.slice(i + 1).trim();
+      return v ? { k: k, v: v } : null;
+    }).filter(Boolean);
+  }
+  function startEdit(f) {
+    state.confirmDelete = false;
+    if (f) {
+      state.editing = {
+        id: f.id, isNew: false, name: f.name || '', folderName: f.folderName || '', folderUrl: f.folderUrl || '', order: f.order,
+        tools: (f.tools || []).map(function (t) {
+          return { title: t.title || '', what: t.what || '', url: t.url || '', detailsText: detailsToText(t.details), copyName: t.copyName || '', copyUrl: t.copyUrl || '' };
+        })
+      };
+    } else {
+      var maxOrder = state.funnels.reduce(function (m, x) { return Math.max(m, Number(x.order) || 0); }, 0);
+      state.editing = { id: null, isNew: true, name: '', folderName: '', folderUrl: '', order: maxOrder + 1, tools: [] };
+    }
+    render();
+    var first = document.getElementById('f-name'); if (first) first.focus();
+  }
+  function slugify(name) {
+    var s = String(name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'embudo';
+    return s + '-' + Math.random().toString(36).slice(2, 6);
+  }
+  function bind(el, obj, key) {
+    el.value = obj[key] || '';
+    el.addEventListener('input', function () { obj[key] = el.value; });
+    return el;
+  }
+  function labeled(text, input, hint) {
+    return h('label', { class: 'lbl', for: input.id }, text, hint ? h('small', { text: hint }) : null, input);
+  }
+  function move(i, d) {
+    var a = state.editing.tools, j = i + d;
+    if (j < 0 || j >= a.length) return;
+    var x = a[i]; a[i] = a[j]; a[j] = x; render();
+  }
+  function toolForm(t, i) {
+    var p = 't' + i + '-';
+    var up = h('button', { class: 'btn small', type: 'button', text: 'Subir', onclick: function () { move(i, -1); } });
+    var down = h('button', { class: 'btn small', type: 'button', text: 'Bajar', onclick: function () { move(i, 1); } });
+    if (i === 0) up.disabled = true;
+    if (i === state.editing.tools.length - 1) down.disabled = true;
+    return h('div', { class: 'tool-form' },
+      h('div', { class: 'th' }, h('b', { text: 'Herramienta ' + (i + 1) }),
+        h('div', { class: 'sp' }, up, down, h('button', { class: 'btn small danger', type: 'button', text: 'Quitar', onclick: function () { state.editing.tools.splice(i, 1); render(); } }))),
+      h('div', { class: 'grid2' },
+        labeled('Nombre', bind(h('input', { class: 'field', id: p + 'title', type: 'text' }), t, 'title')),
+        labeled('Para qué sirve', bind(h('input', { class: 'field', id: p + 'what', type: 'text' }), t, 'what'))),
+      labeled('Enlace de la herramienta', bind(h('input', { class: 'field', id: p + 'url', type: 'url', placeholder: 'https://' }), t, 'url')),
+      labeled('Datos de apoyo', bind(h('textarea', { class: 'field', id: p + 'det' }), t, 'detailsText'), 'Uno por línea, con el formato Nombre: valor. Quien use la página los copia con un clic.'),
+      h('div', { class: 'grid2' },
+        labeled('Documento de copys', bind(h('input', { class: 'field', id: p + 'cname', type: 'text' }), t, 'copyName'), 'Nombre del archivo en Drive.'),
+        labeled('Enlace de los copys', bind(h('input', { class: 'field', id: p + 'curl', type: 'url', placeholder: 'https://docs.google.com/…' }), t, 'copyUrl'))));
+  }
+  function addTool(key) {
+    var tp = TEMPLATES[key];
+    state.editing.tools.push({ title: tp.title, what: tp.what, url: '', detailsText: tp.detailsText, copyName: '', copyUrl: '' });
+    render();
+    var n = state.editing.tools.length - 1, el = document.getElementById('t' + n + '-title'); if (el) el.focus();
+  }
+
+  function renderForm() {
+    var ed = state.editing;
+    app.replaceChildren();
+    var form = h('form', { class: 'form', novalidate: true });
+    form.appendChild(h('h2', { text: ed.isNew ? 'Nuevo embudo' : 'Editar embudo' }));
+    form.appendChild(labeled('Nombre del embudo', bind(h('input', { class: 'field', id: 'f-name', type: 'text', required: true }), ed, 'name')));
+    form.appendChild(labeled('Carpeta madre en Drive', bind(h('input', { class: 'field', id: 'f-furl', type: 'url', placeholder: 'https://drive.google.com/drive/folders/…' }), ed, 'folderUrl'), 'Enlace de la carpeta del curso.'));
+    ed.tools.forEach(function (t, i) { form.appendChild(toolForm(t, i)); });
+    var add = h('div', { class: 'add-row' }, h('span', { text: 'Agregar:' }));
+    Object.keys(TEMPLATES).forEach(function (k) {
+      add.appendChild(h('button', { class: 'btn small', type: 'button', text: TEMPLATES[k].label, onclick: function () { addTool(k); } }));
+    });
+    form.appendChild(add);
+    var left = h('div', { class: 'sp' },
+      h('button', { class: 'btn primary', type: 'submit', text: state.saving ? 'Guardando…' : 'Guardar', disabled: state.saving }),
+      h('button', { class: 'btn', type: 'button', text: 'Cancelar', onclick: function () { state.editing = null; state.confirmDelete = false; render(); } }));
+    var right = h('div', { class: 'sp' });
+    if (!ed.isNew) {
+      if (!state.confirmDelete) right.appendChild(h('button', { class: 'btn danger', type: 'button', text: 'Eliminar embudo', onclick: function () { state.confirmDelete = true; render(); } }));
+      else {
+        right.appendChild(h('span', { class: 'pending', text: 'Se borra el embudo completo' }));
+        right.appendChild(h('button', { class: 'btn danger', type: 'button', text: 'Sí, eliminar', onclick: removeFunnel }));
+        right.appendChild(h('button', { class: 'btn small', type: 'button', text: 'No', onclick: function () { state.confirmDelete = false; render(); } }));
+      }
+    }
+    form.appendChild(h('div', { class: 'save-row' }, left, right));
+    form.addEventListener('submit', function (e) { e.preventDefault(); saveFunnel(); });
+    app.appendChild(form);
+  }
+
+  async function saveFunnel() {
+    var ed = state.editing;
+    if (!ed || state.saving) return;
+    if (!ed.name.trim()) { say('Escribe el nombre del embudo.', true); var n = document.getElementById('f-name'); if (n) n.focus(); return; }
+    var bad = [];
+    if (ed.folderUrl.trim() && !safeUrl(ed.folderUrl)) bad.push('la carpeta');
+    ed.tools.forEach(function (t, i) {
+      if (t.url.trim() && !safeUrl(t.url)) bad.push('el enlace de la herramienta ' + (i + 1));
+      if (t.copyUrl.trim() && !safeUrl(t.copyUrl)) bad.push('los copys de la herramienta ' + (i + 1));
+    });
+    if (bad.length) { say('Revisa ' + bad.join(', ') + ': el enlace debe empezar con https://', true); return; }
+    var id = ed.id || slugify(ed.name);
+    var data = {
+      name: ed.name.trim(), order: ed.order, folderName: ed.folderName.trim(), folderUrl: ed.folderUrl.trim(),
+      tools: ed.tools.map(function (t) {
+        return { title: t.title.trim(), what: t.what.trim(), url: t.url.trim(), details: textToDetails(t.detailsText), copyName: t.copyName.trim(), copyUrl: t.copyUrl.trim() };
+      })
+    };
+    state.saving = true; render();
+    try {
+      state.pending = { id: id, data: data };
+      await db.collection('funnels').doc(id).set(data);
+      state.funnels = withPending(state.remote);
+      state.selected = id; store('acia-embudo-sel', id);
+      state.editing = null; state.saving = false; render();
+      say('Embudo guardado');
+    } catch (e) {
+      state.pending = null; state.funnels = state.remote;
+      state.saving = false; render();
+      say(e && e.code === 'quota_exceeded' ? 'No hay espacio para más embudos.' : 'No se pudo guardar. Revisa tu acceso y vuelve a intentar.', true);
+    }
+  }
+  async function removeFunnel() {
+    var ed = state.editing;
+    if (!ed || !ed.id) return;
+    var id = ed.id, backup = state.remote;
+    /* Se quita de la pantalla al instante; si la base lo rechaza, vuelve a aparecer con el motivo */
+    state.gone[id] = true;
+    if (state.pending && state.pending.id === id) state.pending = null;
+    state.remote = state.remote.filter(function (x) { return x.id !== id; });
+    state.funnels = withPending(state.remote);
+    if (state.selected === id) state.selected = null;
+    state.editing = null; state.confirmDelete = false;
+    render(); say('Eliminando…');
+    try {
+      await db.collection('funnels').doc(id).delete();
+      say('Embudo eliminado');
+    } catch (e) {
+      delete state.gone[id];
+      state.remote = backup; state.funnels = withPending(backup);
+      render();
+      say('No se pudo eliminar' + (e && e.code ? ' (' + e.code + ')' : '') + '. Revisa que tengas permiso de Editor.', true);
+    }
+  }
+
+  /* Muestra de inmediato lo que esta persona acaba de guardar, aunque la base tarde en confirmarlo */
+  function withPending(list) {
+    var p = state.pending;
+    if (!p) return list;
+    var item = Object.assign({}, p.data, { id: p.id });
+    var out = list.filter(function (x) { return x.id !== p.id; });
+    out.push(item);
+    out.sort(function (a, b) { return (Number(a.order) || 0) - (Number(b.order) || 0); });
+    return out;
+  }
+
+  function render() { if (state.editing) renderForm(); else renderView(); }
+
+  /* ---------- Arranque ---------- */
+  async function cap(name) {
+    try { return window.claude && window.claude.use ? await window.claude.use(name) : null; } catch (e) { return null; }
+  }
+  (async function boot() {
+    var hash = (location.hash || '').replace(/^#/, '');
+    state.selected = hash || load('acia-embudo-sel');
+    render();
+    var user = await cap('user');
+    try { canEdit = user ? !!(await user.canEdit()) : false; } catch (e) { canEdit = false; }
+    db = await cap('db');
+    if (!db) { render(); return; }
+    var slow = setTimeout(function () { if (!state.loaded) say('Está tardando más de lo normal en cargar. Revisa tu conexión.', true); }, 10000);
+    try {
+      db.collection('funnels').orderBy('order').onSnapshot(function (snap) {
+        var inSnap = {};
+        snap.docs.forEach(function (d) { inSnap[d.id] = true; });
+        Object.keys(state.gone).forEach(function (id) { if (!inSnap[id]) delete state.gone[id]; });
+        state.remote = snap.docs.map(function (d) { var x = d.data() || {}; x.id = d.id; return x; }).filter(function (x) { return !state.gone[x.id]; });
+        if (state.pending && !snap.metadata.hasPendingWrites && state.remote.some(function (x) { return x.id === state.pending.id; })) state.pending = null;
+        state.funnels = withPending(state.remote);
+        if (!snap.metadata.fromCache || snap.size) { state.loaded = true; clearTimeout(slow); }
+        if (!state.editing) render();
+      }, function () { clearTimeout(slow); state.loaded = true; if (!state.editing) render(); });
+    } catch (e) { clearTimeout(slow); db = null; render(); }
+  })();
+})();
+</script>
+
+</body></html>

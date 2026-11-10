@@ -1,4 +1,5 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Accesos del Embudo ACIA</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -113,6 +114,8 @@ textarea.field { min-height: 78px; resize: vertical; font-family: var(--font-mon
 .state { background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 28px 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .state b { font-family: var(--font-display); font-size: 19px; }
 .state p { margin: 0; color: var(--muted); max-width: 60ch; }
+.note { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: 8px 12px; font-size: 14px; margin: 0; }
+.note a { color: inherit; font-weight: 600; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; max-width: calc(100% - 32px); z-index: 20; }
 .toast.err { background: var(--danger); color: #fff; }
 
@@ -137,19 +140,23 @@ textarea.field { min-height: 78px; resize: vertical; font-family: var(--font-mon
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head><body>
 
 <div class="wrap">
   <div id="app" class="col" aria-live="polite"></div>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
+<script type="application/json" id="seed-data">{"savedAt": "9/11/2026", "funnels": [{"folderName": "00. Sistema Operativo - Webinar: Haz que la IA trabaje por ti", "folderUrl": "https://drive.google.com/drive/folders/1DcdTaGrLn51-mB-XXv12j0c3d1zozGic?usp=drive_link", "name": "Haz que la IA trabaje por ti", "order": 1, "tools": [{"copyName": "02. ACIA - Copy Secuencia de correos", "copyUrl": "https://docs.google.com/document/d/1uY2QZW_udwxU58boYWwxkOCwuDxNY_J1/edit", "details": [{"k": "Ruta", "v": "Marketing › Emails › Scheduled › carpeta del embudo"}], "title": "Correos en GoHighLevel", "url": "https://app.gohighlevel.com/v2/location/hWY7mqFbOaOnnr2DG4Ll/marketing/emails/scheduled?folderId=6accd4b1bc11561a48ecb5b5&pageNumber=1", "what": "Carpeta donde viven los correos programados."}, {"copyName": "03. ACIA - Secuencias - Agentiza + Sendflow · pestaña Agentiza", "copyUrl": "https://docs.google.com/spreadsheets/d/17plZ14guu59DiimAJ6dAa4vuKIRA4mPr/edit?gid=1314048728#gid=1314048728", "details": [{"k": "Sección", "v": "Bot › WhatsApp › Campaigns"}], "title": "Agentiza · Difusiones de WhatsApp", "url": "https://app.agentiza.ai/bot/197a9de9-2536-43f1-8197-f42d3c358c3f/wa/campaigns", "what": "Campañas de WhatsApp del bot."}, {"copyName": "03. ACIA - Secuencias - Agentiza + Sendflow · pestaña SendFlow", "copyUrl": "https://docs.google.com/spreadsheets/d/17plZ14guu59DiimAJ6dAa4vuKIRA4mPr/edit?gid=1425752497#gid=1425752497", "details": [{"k": "Cuenta", "v": "automatiza@academiadeia.com"}], "title": "SendFlow · Grupos de WhatsApp", "url": "https://sendflow.pro/login", "what": "Envíos a grupos de WhatsApp."}], "id": "haz-que-la-ia-trabaje-por-ti"}, {"folderName": "", "folderUrl": "https://drive.google.com/drive/folders/1WhQtjbHXo0I7qzT_Hgpk3vfI_muM8cmG?usp=drive_link", "name": "Claude Avanzado", "order": 2, "tools": [], "id": "claude-avanzado-wu1m"}]}</script>
 <script>
 (function () {
   var app = document.getElementById('app');
   var toast = document.getElementById('toast');
   var toastTimer;
   var db = null, canEdit = false;
-  var state = { funnels: [], remote: [], pending: null, gone: {}, selected: null, editing: null, loaded: false, confirmDelete: false, saving: false };
+  var LIVE_URL = 'https://claude.ai/artifact/E1Do4pZJAp5e3J8veAkZZ1';
+  var state = { booting: true, offline: false, savedAt: '', funnels: [], remote: [], pending: null, gone: {}, selected: null, editing: null, loaded: false, confirmDelete: false, saving: false };
 
   var COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
 
@@ -265,7 +272,11 @@ textarea.field { min-height: 78px; resize: vertical; font-family: var(--font-mon
 
   function renderView() {
     app.replaceChildren();
-    if (!db) {
+    if (state.booting) {
+      app.appendChild(h('div', { class: 'state' }, h('b', { text: 'Cargando embudos…' })));
+      return;
+    }
+    if (!db && !state.offline) {
       app.appendChild(h('div', { class: 'state' }, h('b', { text: 'No se pudieron cargar los embudos' }), h('p', { text: 'Abre esta página con tu sesión de Academia de IA. Si ya la tienes y sigue igual, pide acceso a quien te compartió el enlace.' })));
       return;
     }
@@ -282,6 +293,7 @@ textarea.field { min-height: 78px; resize: vertical; font-family: var(--font-mon
         canEdit ? h('button', { class: 'btn primary', type: 'button', text: 'Crear el primer embudo', onclick: function () { startEdit(null); } }) : null));
       return;
     }
+    if (state.offline) app.appendChild(h('p', { class: 'note' }, 'Copia guardada' + (state.savedAt ? ' el ' + state.savedAt : '') + ', solo para consultar. Para ver los cambios más recientes, ', h('a', { href: LIVE_URL, target: '_blank', rel: 'noopener', text: 'abre la versión en Claude' }), '.'));
     app.appendChild(topBar(cur));
     var tools = cur.tools || [];
     if (!tools.length) app.appendChild(h('div', { class: 'state' }, h('b', { text: 'Este embudo no tiene herramientas todavía' }), h('p', { text: canEdit ? 'Usa “Editar” para agregar correos, difusiones o grupos.' : 'Pídele a quien administra esta página que las agregue.' })));
@@ -455,6 +467,17 @@ textarea.field { min-height: 78px; resize: vertical; font-family: var(--font-mon
   function render() { if (state.editing) renderForm(); else renderView(); }
 
   /* ---------- Arranque ---------- */
+  /* Copia incrustada por quien arma el archivo para GitHub; solo se usa cuando no hay base de datos */
+  function useSeed() {
+    try {
+      var el = document.getElementById('seed-data');
+      if (!el) return;
+      var seed = JSON.parse(el.textContent);
+      var list = Array.isArray(seed.funnels) ? seed.funnels : [];
+      state.remote = list; state.funnels = list;
+      state.offline = true; state.loaded = true; state.savedAt = seed.savedAt || '';
+    } catch (e) {}
+  }
   async function cap(name) {
     try { return window.claude && window.claude.use ? await window.claude.use(name) : null; } catch (e) { return null; }
   }
@@ -465,7 +488,8 @@ textarea.field { min-height: 78px; resize: vertical; font-family: var(--font-mon
     var user = await cap('user');
     try { canEdit = user ? !!(await user.canEdit()) : false; } catch (e) { canEdit = false; }
     db = await cap('db');
-    if (!db) { render(); return; }
+    state.booting = false;
+    if (!db) { useSeed(); render(); return; }
     var slow = setTimeout(function () { if (!state.loaded) say('Está tardando más de lo normal en cargar. Revisa tu conexión.', true); }, 10000);
     try {
       db.collection('funnels').orderBy('order').onSnapshot(function (snap) {
@@ -482,5 +506,4 @@ textarea.field { min-height: 78px; resize: vertical; font-family: var(--font-mon
   })();
 })();
 </script>
-
 </body></html>
